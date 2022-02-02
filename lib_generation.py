@@ -511,7 +511,7 @@ def get_LID(
             )
             out_features[i] = torch.mean(out_features[i].data, 2)
             X_act_adv.append(
-                np.asarray(out_features[i], dtype=np.float32).reshape(
+                np.asarray(out_features[i].cpu(), dtype=np.float32).reshape(
                     (out_features[i].size(0), -1)
                 )
             )
