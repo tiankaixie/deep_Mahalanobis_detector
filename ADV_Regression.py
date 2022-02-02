@@ -18,7 +18,8 @@ print(args)
 
 def main():
     # initial setup
-    dataset_list = ["cifar10", "cifar100", "svhn"]
+    dataset_list = ["cifar10"]
+    # dataset_list = ["cifar10", "cifar100", "svhn"]
     adv_test_list = ["FGSM"]
     # adv_test_list = ["FGSM", "BIM", "DeepFool", "CWL2"]
 
