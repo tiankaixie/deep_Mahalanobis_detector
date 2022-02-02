@@ -8,7 +8,7 @@ import torchvision.transforms as torch_trans
 import random
 from torch import is_tensor
 
-CROP_TYPE = ['center', 'random', 'sliding']
+CROP_TYPE = ["center", "random", "sliding"]
 
 
 class Crop(object):
@@ -20,16 +20,15 @@ class Crop(object):
         crop_frac: crop fraction to crop from the image
     """
 
-    def __init__(self, crop_type=None, crop_frac=1.0,
-                    sliding_crop_position=None):
-        assert crop_frac <= 1.0, \
-            "crop_frac can't be greater than 1.0"
+    def __init__(self, crop_type=None, crop_frac=1.0, sliding_crop_position=None):
+        assert crop_frac <= 1.0, "crop_frac can't be greater than 1.0"
         if sliding_crop_position is not None:
             # max positions are fixed to 9
             assert sliding_crop_position < 9
 
-        assert (crop_type is None or crop_type in CROP_TYPE), (
-            "{} is not a valid crop_type".format(crop_type))
+        assert (
+            crop_type is None or crop_type in CROP_TYPE
+        ), "{} is not a valid crop_type".format(crop_type)
 
         self.crop_type = crop_type
         self.crop_frac = crop_frac
@@ -50,17 +49,17 @@ class Crop(object):
         h_range = h - h2
         w_range = w - w2
 
-        if self.crop_type == 'sliding':
+        if self.crop_type == "sliding":
             assert self.sliding_crop_position is not None
             row = int(self.sliding_crop_position / 3)
             col = self.sliding_crop_position % 3
             x = col * int(w_range / 2)
             y = row * int(h_range / 2)
 
-        elif self.crop_type == 'random':
+        elif self.crop_type == "random":
             x, y = random.randint(0, w_range), random.randint(0, h_range)
 
-        elif self.crop_type == 'center':
+        elif self.crop_type == "center":
             y = int(h_range / 2)
             x = int(w_range / 2)
 
@@ -70,8 +69,9 @@ class Crop(object):
         return img
 
     def update_sliding_position(self, sliding_crop_position):
-        assert sliding_crop_position >= 0 and sliding_crop_position < 9, \
-            "Only 9 sliding positions supported"
+        assert (
+            sliding_crop_position >= 0 and sliding_crop_position < 9
+        ), "Only 9 sliding positions supported"
         self.sliding_crop_position = sliding_crop_position
 
 
@@ -82,11 +82,12 @@ class Scale(object):
             int instead of sequence like (h, w), a square crop (size, size) is
             made.
     """
+
     def __init__(self, size, mean_std=None):
 
         if mean_std is not None:
-            assert 'MEAN' in mean_std
-            assert 'STD' in mean_std
+            assert "MEAN" in mean_std
+            assert "STD" in mean_std
         self.size = size
         self.mean_std = mean_std
 
@@ -103,14 +104,16 @@ class Scale(object):
         if not img.size(1) == self.size:
             # TODO: We should not need to Unnormalize for scaling(validate if its true)
             if self.mean_std:
-                img = Unnormalize(mean=self.mean_std['MEAN'],
-                                  std=self.mean_std['STD'])(img)
+                img = Unnormalize(mean=self.mean_std["MEAN"], std=self.mean_std["STD"])(
+                    img
+                )
             img = torch_trans.ToPILImage()(img)
             img = torch_trans.Scale(self.size)(img)
             img = torch_trans.ToTensor()(img)
             if self.mean_std:
-                img = torch_trans.Normalize(mean=self.mean_std['MEAN'],
-                                            std=self.mean_std['STD'])(img)
+                img = torch_trans.Normalize(
+                    mean=self.mean_std["MEAN"], std=self.mean_std["STD"]
+                )(img)
 
         return img
 
@@ -129,8 +132,9 @@ class Unnormalize(object):
                 imgs_trans[i, :, :] = imgs_trans[i, :, :] * self.std[i] + self.mean[i]
         else:
             for i in range(imgs.size(1)):
-                imgs_trans[:, i, :, :] = ((imgs_trans[:, i, :, :] * self.std[i]) +
-                                            self.mean[i])
+                imgs_trans[:, i, :, :] = (
+                    imgs_trans[:, i, :, :] * self.std[i]
+                ) + self.mean[i]
         return imgs_trans
 
 
@@ -148,6 +152,7 @@ class Normalize(object):
                 imgs_trans[i, :, :] = (imgs_trans[i, :, :] - self.mean[i]) / self.std[i]
         else:
             for i in range(imgs.size(1)):
-                imgs_trans[:, i, :, :] = ((imgs_trans[:, i, :, :] - self.mean[i]) /
-                                            self.std[i])
+                imgs_trans[:, i, :, :] = (
+                    imgs_trans[:, i, :, :] - self.mean[i]
+                ) / self.std[i]
         return imgs_trans

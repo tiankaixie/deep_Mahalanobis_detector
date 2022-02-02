@@ -10,6 +10,7 @@ from scipy.optimize import minimize
 from skimage.util import img_as_float
 from skimage import color
 
+
 def tv(x, p):
     f = np.linalg.norm(x[1:, :] - x[:-1, :], p, axis=1).sum()
     f += np.linalg.norm(x[:, 1:] - x[:, :-1], p, axis=0).sum()
@@ -57,4 +58,3 @@ def tv_inf(x, y, lam, p, tau):
 def tv_inf_dx(x, y, lam, p, tau):
     x = np.reshape(x, y.shape)
     return lam * tv_dx(x, p).flatten()
-

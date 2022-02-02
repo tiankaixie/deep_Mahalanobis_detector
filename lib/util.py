@@ -16,7 +16,7 @@ import tempfile
 import torch
 
 # constants:
-CHECKPOINT_FILE = 'checkpoint.torch'
+CHECKPOINT_FILE = "checkpoint.torch"
 
 
 # function that measures top-k accuracy:
@@ -29,7 +29,7 @@ def accuracy(output, target, topk=(1,)):
     res = []
     for k in topk:
         correct_k = correct[:k].view(-1).float().sum(0, keepdim=True)
-        res.append(correct_k.mul_(100. / batch_size))
+        res.append(correct_k.mul_(100.0 / batch_size))
     return res
 
 
@@ -53,20 +53,21 @@ def save_checkpoint(checkpoint_folder, state):
         try:
             os.makedirs(checkpoint_folder)
         except BaseException:
-            print('| WARNING: could not create directory %s' % checkpoint_folder)
+            print("| WARNING: could not create directory %s" % checkpoint_folder)
     if not os.path.isdir(checkpoint_folder):
         return False
 
     # write checkpoint atomically:
     try:
         with tempfile.NamedTemporaryFile(
-                'w', dir=checkpoint_folder, delete=False) as fwrite:
+            "w", dir=checkpoint_folder, delete=False
+        ) as fwrite:
             tmp_filename = fwrite.name
             torch.save(state, fwrite.name)
         os.rename(tmp_filename, os.path.join(checkpoint_folder, CHECKPOINT_FILE))
         return True
     except BaseException:
-        print('| WARNING: could not write checkpoint to %s.' % checkpoint_folder)
+        print("| WARNING: could not write checkpoint to %s." % checkpoint_folder)
         return False
 
 
@@ -74,7 +75,7 @@ def save_checkpoint(checkpoint_folder, state):
 def adjust_learning_rate(base_lr, epoch, optimizer, lr_decay, lr_decay_stepsize):
     lr = base_lr * (lr_decay ** (epoch // lr_decay_stepsize))
     for param_group in optimizer.param_groups:
-        param_group['lr'] = lr
+        param_group["lr"] = lr
 
 
 # adversary functions
@@ -103,8 +104,8 @@ def MSSIM(x, y, window_size=16, stride=4):
     y_inds = torch.arange(0, W - window_size + 1, stride).long()
     for i in x_inds:
         for j in y_inds:
-            x_sub = x[:, :, i:(i + window_size), j:(j + window_size)]
-            y_sub = y[:, :, i:(i + window_size), j:(j + window_size)]
+            x_sub = x[:, :, i : (i + window_size), j : (j + window_size)]
+            y_sub = y[:, :, i : (i + window_size), j : (j + window_size)]
             ssim = ssim + SSIM(x_sub, y_sub)
     return ssim / x_inds.size(0) / y_inds.size(0)
 

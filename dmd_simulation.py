@@ -1,19 +1,15 @@
-"""
-Created on Sun Oct 21 2018
-@author: Kimin Lee
-"""
-from __future__ import print_function
-import argparse
+import os
+import models
 import torch
 import data_loader
+import argparse
 import numpy as np
-import calculate_log as callog
-import models
-import os
 import lib_generation
+
 
 from torchvision import transforms
 from torch.autograd import Variable
+
 
 parser = argparse.ArgumentParser(description="PyTorch code: Mahalanobis detector")
 parser.add_argument(
@@ -33,7 +29,7 @@ args = parser.parse_args()
 print(args)
 
 
-def main():
+def simulation_cifar10_resnet_imagenet():
     # set the path to pre-trained model and output
     pre_trained_net = "./pre_trained/" + args.net_type + "_" + args.dataset + ".pth"
     args.outf = args.outf + args.net_type + "_" + args.dataset + "/"
@@ -47,7 +43,7 @@ def main():
     if args.dataset == "svhn":
         out_dist_list = ["cifar10", "imagenet_resize", "lsun_resize"]
     else:
-        out_dist_list = ["svhn", "imagenet_resize", "lsun_resize"]
+        out_dist_list = ["imagenet_resize"]
 
     # load networks
     if args.net_type == "densenet":
@@ -176,4 +172,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    simulation_cifar10_resnet_imagenet()

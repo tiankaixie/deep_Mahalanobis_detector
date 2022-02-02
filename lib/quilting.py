@@ -10,7 +10,8 @@ import torch
 
 # load seam-finding library:
 FINDSEAM_LIB = ctypes.cdll.LoadLibrary(
-    'libexperimental_deeplearning_lvdmaaten_adversarial_findseam.so')
+    "libexperimental_deeplearning_lvdmaaten_adversarial_findseam.so"
+)
 
 # other globals:
 LATTICE_CACHE = {}  # cache lattices here
@@ -24,21 +25,22 @@ def __four_lattice__(height, width, use_cache=True):
         return LATTICE_CACHE[(height, width)]
 
     # assertions and initialization:
-    assert type(width) == int and type(height) == int and \
-        width > 0 and height > 0, 'height and width should be positive integers'
+    assert (
+        type(width) == int and type(height) == int and width > 0 and height > 0
+    ), "height and width should be positive integers"
     N = height * width
     height, width = width, height  # tensors are in row-major format
     graph = {
-        'from': torch.LongTensor(4 * N - (height + width) * 2),
-        'to': torch.LongTensor(4 * N - (height + width) * 2),
+        "from": torch.LongTensor(4 * N - (height + width) * 2),
+        "to": torch.LongTensor(4 * N - (height + width) * 2),
     }
 
     # closure that copies stuff in:
     def add_edges(i, j, offset):
-        graph['from'].narrow(0, offset, i.nelement()).copy_(i)
-        graph['from'].narrow(0, offset + i.nelement(), j.nelement()).copy_(j)
-        graph['to'].narrow(0, offset, j.nelement()).copy_(j)
-        graph['to'].narrow(0, offset + j.nelement(), i.nelement()).copy_(i)
+        graph["from"].narrow(0, offset, i.nelement()).copy_(i)
+        graph["from"].narrow(0, offset + i.nelement(), j.nelement()).copy_(j)
+        graph["to"].narrow(0, offset, j.nelement()).copy_(j)
+        graph["to"].narrow(0, offset + j.nelement(), i.nelement()).copy_(i)
 
     # add vertical connections:
     i = torch.arange(0, N).squeeze().long()
@@ -60,18 +62,21 @@ def __four_lattice__(height, width, use_cache=True):
 
 # utility function for checking inputs:
 def __assert_inputs__(im1, im2, mask=None):
-    assert type(im1) == torch.ByteTensor or type(im1) == torch.FloatTensor, \
-        'im1 should be a ByteTensor or FloatTensor'
-    assert type(im2) == torch.ByteTensor or type(im2) == torch.FloatTensor, \
-        'im2 should be a ByteTensor or FloatTensor'
-    assert im1.dim() == 3, 'im1 should be three-dimensional'
-    assert im2.dim() == 3, 'im2 should be three-dimensional'
-    assert im1.size() == im2.size(), 'im1 and im2 should have same size'
+    assert (
+        type(im1) == torch.ByteTensor or type(im1) == torch.FloatTensor
+    ), "im1 should be a ByteTensor or FloatTensor"
+    assert (
+        type(im2) == torch.ByteTensor or type(im2) == torch.FloatTensor
+    ), "im2 should be a ByteTensor or FloatTensor"
+    assert im1.dim() == 3, "im1 should be three-dimensional"
+    assert im2.dim() == 3, "im2 should be three-dimensional"
+    assert im1.size() == im2.size(), "im1 and im2 should have same size"
     if mask is not None:
-            assert mask.dim() == 2, 'mask should be two-dimensional'
-            assert type(mask) == torch.ByteTensor, 'mask should be torch.ByteTensor'
-            assert mask.size(0) == im1.size(1) and mask.size(1) == im1.size(2), \
-                'mask should have same height and width as images'
+        assert mask.dim() == 2, "mask should be two-dimensional"
+        assert type(mask) == torch.ByteTensor, "mask should be torch.ByteTensor"
+        assert mask.size(0) == im1.size(1) and mask.size(1) == im1.size(
+            2
+        ), "mask should have same height and width as images"
 
 
 # function that finds seam between two images:
@@ -84,26 +89,27 @@ def find_seam(im1, im2, mask):
 
     # construct edge weights:
     graph = __four_lattice__(im1.size(1), im1.size(2))
-    values = torch.FloatTensor(graph['from'].size(0)).fill_(0.)
+    values = torch.FloatTensor(graph["from"].size(0)).fill_(0.0)
     for c in range(im1.size(0)):
         im1c = im1[c].contiguous().view(im1.size(1) * im1.size(2))
         im2c = im2[c].contiguous().view(im2.size(1) * im2.size(2))
-        values.add_(torch.abs(
-            im2c.index_select(0, graph['to']) -
-            im1c.index_select(0, graph['from'])
-        ))
+        values.add_(
+            torch.abs(
+                im2c.index_select(0, graph["to"]) - im1c.index_select(0, graph["from"])
+            )
+        )
 
     # construct terminal weights:
     idxim = torch.arange(0, mask.nelement()).long().view(mask.size())
     tvalues = torch.FloatTensor(mask.nelement(), 2).fill_(0)
     for c in range(2):
-        select_c = (mask == (c + 1))
+        select_c = mask == (c + 1)
         if select_c.any():
-            tvalues.select(1, c).index_fill_(0, idxim[select_c], float('inf'))
+            tvalues.select(1, c).index_fill_(0, idxim[select_c], float("inf"))
 
     # convert graph to IntTensor (make sure this is not GC'ed):
-    graph_from = graph['from'].int()
-    graph_to = graph['to'].int()
+    graph_from = graph["from"].int()
+    graph_to = graph["to"].int()
 
     # run the Boykov algorithm to obtain stitching mask:
     labels = torch.IntTensor(mask.nelement())
@@ -143,8 +149,15 @@ def __stitch__(im1, im2, overlap, y, x):
 
 
 # main quilting function:
-def quilting(img, faiss_index, patch_dict, patch_size=5, overlap=2,
-                                        graphcut=False, patch_transform=None):
+def quilting(
+    img,
+    faiss_index,
+    patch_dict,
+    patch_size=5,
+    overlap=2,
+    graphcut=False,
+    patch_transform=None,
+):
 
     # assertions:
     assert torch.is_tensor(img)
@@ -161,7 +174,7 @@ def quilting(img, faiss_index, patch_dict, patch_size=5, overlap=2,
     x_range = range(0, img.size(2) - patch_size, patch_size - overlap)
     for y in y_range:
         for x in range(0, img.size(2) - patch_size, patch_size - overlap):
-            patch = img[:, y:y + patch_size, x:x + patch_size]
+            patch = img[:, y : y + patch_size, x : x + patch_size]
             if patch_transform is not None:
                 patch = patch_transform(patch)
             patches.append(patch)
@@ -173,8 +186,10 @@ def quilting(img, faiss_index, patch_dict, patch_size=5, overlap=2,
     _, neighbors = faiss_index.search(patches.numpy(), 1)
     neighbors = torch.LongTensor(neighbors).squeeze()
     if (neighbors == -1).any():
-        print('WARNING: %d out of %d neighbor searches failed.' %
-              ((neighbors == -1).sum(), neighbors.nelement()))
+        print(
+            "WARNING: %d out of %d neighbor searches failed."
+            % ((neighbors == -1).sum(), neighbors.nelement())
+        )
 
     # piece the image back together:
     n = 0
@@ -187,7 +202,7 @@ def quilting(img, faiss_index, patch_dict, patch_size=5, overlap=2,
                 patch = patch_dict[neighbors[n]].view(
                     img.size(0), patch_size, patch_size
                 )
-                cur_img = quilt_img[:, y:y + patch_size, x:x + patch_size]
+                cur_img = quilt_img[:, y : y + patch_size, x : x + patch_size]
 
                 # compute graph cut if requested:
                 if graphcut:
