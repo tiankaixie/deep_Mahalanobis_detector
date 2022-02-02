@@ -19,7 +19,8 @@ print(args)
 def main():
     # initial setup
     dataset_list = ["cifar10", "cifar100", "svhn"]
-    adv_test_list = ["FGSM", "BIM", "DeepFool", "CWL2"]
+    adv_test_list = ["FGSM"]
+    # adv_test_list = ["FGSM", "BIM", "DeepFool", "CWL2"]
 
     print("evaluate the LID estimator")
     score_list = [
