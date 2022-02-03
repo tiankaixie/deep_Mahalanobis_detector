@@ -8,6 +8,8 @@ from torch.autograd import Variable
 from scipy.spatial.distance import pdist, cdist, squareform
 
 # lid of a batch of query points X
+
+
 def mle_batch(data, batch, k):
     """
     commpute lid score using data & batch with k-neighbors
@@ -17,9 +19,9 @@ def mle_batch(data, batch, k):
     batch = np.asarray(batch, dtype=np.float32)
 
     k = min(k, len(data) - 1)
-    f = lambda v: -k / np.sum(np.log(v / v[-1]))
+    def f(v): return -k / np.sum(np.log(v / v[-1]))
     a = cdist(batch, data)
-    a = np.apply_along_axis(np.sort, axis=1, arr=a)[:, 1 : k + 1]
+    a = np.apply_along_axis(np.sort, axis=1, arr=a)[:, 1: k + 1]
     a = np.apply_along_axis(f, axis=1, arr=a)
     return a
 
@@ -42,6 +44,90 @@ def merge_and_generate_labels(X_pos, X_neg):
     y = y.reshape((X.shape[0], 1))
 
     return X, y
+
+
+def sample_estimator_2(model, num_classes, feature_list, train_loader):
+    import sklearn.covariance
+    model.eval()
+    group_lasso = sklearn.covariance.EmpiricalCovariance(assume_centered=False)
+    correct, total = 0, 0
+    num_output = len(feature_list)
+    num_sample_per_class = np.empty(num_classes)
+    num_sample_per_class.fill(0)
+    list_features = []
+    for i in range(num_output):
+        temp_list = []
+        for j in range(num_classes):
+            temp_list.append(0)
+        list_features.append(temp_list)
+
+    for data, target in train_loader:
+        total += data.size(0)
+        data = data.cuda()
+        data = Variable(data, volatile=True)
+        output, out_features = model.feature_list(data)
+
+        # get hidden features
+        for i in range(num_output):
+            out_features[i] = out_features[i].view(
+                out_features[i].size(0), out_features[i].size(1), -1
+            )
+            out_features[i] = torch.mean(out_features[i].data, 2)
+
+        # compute the accuracy
+        pred = output.data.max(1)[1]
+        print(f'type(output): {type(output)}')
+        print(f'type(pred): {type(pred)}')
+        print(f'type(target): {type(target)}')
+        equal_flag = pred.eq(target.cuda()).cpu()
+        correct += equal_flag.sum()
+
+        # construct the sample matrix
+        for i in range(data.size(0)):
+            label = target[i]
+            if num_sample_per_class[label] == 0:
+                out_count = 0
+                for out in out_features:
+                    list_features[out_count][label] = out[i].view(1, -1)
+                    out_count += 1
+            else:
+                out_count = 0
+                for out in out_features:
+                    list_features[out_count][label] = torch.cat(
+                        (list_features[out_count]
+                         [label], out[i].view(1, -1)), 0
+                    )
+                    out_count += 1
+            num_sample_per_class[label] += 1
+
+    sample_class_mean = []
+    out_count = 0
+    for num_feature in feature_list:
+        temp_list = torch.Tensor(num_classes, int(num_feature)).cuda()
+        for j in range(num_classes):
+            temp_list[j] = torch.mean(list_features[out_count][j], 0)
+        sample_class_mean.append(temp_list)
+        out_count += 1
+
+    precision = []
+    for k in range(num_output):
+        X = 0
+        for i in range(num_classes):
+            if i == 0:
+                X = list_features[k][i] - sample_class_mean[k][i]
+            else:
+                X = torch.cat(
+                    (X, list_features[k][i] - sample_class_mean[k][i]), 0)
+
+        # find inverse
+        group_lasso.fit(X.cpu().numpy())
+        temp_precision = group_lasso.precision_
+        temp_precision = torch.from_numpy(temp_precision).float().cuda()
+        precision.append(temp_precision)
+
+    print("\n Training Accuracy:({:.2f}%)\n".format(100.0 * correct / total))
+
+    return sample_class_mean, precision
 
 
 def sample_estimator(model, num_classes, feature_list, train_loader):
@@ -95,7 +181,8 @@ def sample_estimator(model, num_classes, feature_list, train_loader):
                 out_count = 0
                 for out in out_features:
                     list_features[out_count][label] = torch.cat(
-                        (list_features[out_count][label], out[i].view(1, -1)), 0
+                        (list_features[out_count]
+                         [label], out[i].view(1, -1)), 0
                     )
                     out_count += 1
             num_sample_per_class[label] += 1
@@ -116,7 +203,8 @@ def sample_estimator(model, num_classes, feature_list, train_loader):
             if i == 0:
                 X = list_features[k][i] - sample_class_mean[k][i]
             else:
-                X = torch.cat((X, list_features[k][i] - sample_class_mean[k][i]), 0)
+                X = torch.cat(
+                    (X, list_features[k][i] - sample_class_mean[k][i]), 0)
 
         # find inverse
         group_lasso.fit(X.cpu().numpy())
@@ -151,7 +239,8 @@ def get_Mahalanobis_score(
     if out_flag == True:
         temp_file_name = "%s/confidence_Ga%s_In.txt" % (outf, str(layer_index))
     else:
-        temp_file_name = "%s/confidence_Ga%s_Out.txt" % (outf, str(layer_index))
+        temp_file_name = "%s/confidence_Ga%s_Out.txt" % (
+            outf, str(layer_index))
 
     g = open(temp_file_name, "w")
 
@@ -161,7 +250,8 @@ def get_Mahalanobis_score(
         data, target = Variable(data, requires_grad=True), Variable(target)
 
         out_features = model.intermediate_forward(data, layer_index)
-        out_features = out_features.view(out_features.size(0), out_features.size(1), -1)
+        out_features = out_features.view(
+            out_features.size(0), out_features.size(1), -1)
         out_features = torch.mean(out_features, 2)
 
         # compute Mahalanobis score
@@ -176,11 +266,13 @@ def get_Mahalanobis_score(
             if i == 0:
                 gaussian_score = term_gau.view(-1, 1)
             else:
-                gaussian_score = torch.cat((gaussian_score, term_gau.view(-1, 1)), 1)
+                gaussian_score = torch.cat(
+                    (gaussian_score, term_gau.view(-1, 1)), 1)
 
         # Input_processing
         sample_pred = gaussian_score.max(1)[1]
-        batch_sample_mean = sample_mean[layer_index].index_select(0, sample_pred)
+        batch_sample_mean = sample_mean[layer_index].index_select(
+            0, sample_pred)
         zero_f = out_features - Variable(batch_sample_mean)
         pure_gau = (
             -0.5
@@ -197,33 +289,39 @@ def get_Mahalanobis_score(
             gradient.index_copy_(
                 1,
                 torch.LongTensor([0]).cuda(),
-                gradient.index_select(1, torch.LongTensor([0]).cuda()) / (63.0 / 255.0),
+                gradient.index_select(1, torch.LongTensor(
+                    [0]).cuda()) / (63.0 / 255.0),
             )
             gradient.index_copy_(
                 1,
                 torch.LongTensor([1]).cuda(),
-                gradient.index_select(1, torch.LongTensor([1]).cuda()) / (62.1 / 255.0),
+                gradient.index_select(1, torch.LongTensor(
+                    [1]).cuda()) / (62.1 / 255.0),
             )
             gradient.index_copy_(
                 1,
                 torch.LongTensor([2]).cuda(),
-                gradient.index_select(1, torch.LongTensor([2]).cuda()) / (66.7 / 255.0),
+                gradient.index_select(1, torch.LongTensor(
+                    [2]).cuda()) / (66.7 / 255.0),
             )
         elif net_type == "resnet":
             gradient.index_copy_(
                 1,
                 torch.LongTensor([0]).cuda(),
-                gradient.index_select(1, torch.LongTensor([0]).cuda()) / (0.2023),
+                gradient.index_select(
+                    1, torch.LongTensor([0]).cuda()) / (0.2023),
             )
             gradient.index_copy_(
                 1,
                 torch.LongTensor([1]).cuda(),
-                gradient.index_select(1, torch.LongTensor([1]).cuda()) / (0.1994),
+                gradient.index_select(
+                    1, torch.LongTensor([1]).cuda()) / (0.1994),
             )
             gradient.index_copy_(
                 1,
                 torch.LongTensor([2]).cuda(),
-                gradient.index_select(1, torch.LongTensor([2]).cuda()) / (0.2010),
+                gradient.index_select(
+                    1, torch.LongTensor([2]).cuda()) / (0.2010),
             )
         tempInputs = torch.add(data.data, -magnitude, gradient)
 
@@ -297,33 +395,39 @@ def get_posterior(model, net_type, test_loader, magnitude, temperature, outf, ou
             gradient.index_copy_(
                 1,
                 torch.LongTensor([0]).cuda(),
-                gradient.index_select(1, torch.LongTensor([0]).cuda()) / (63.0 / 255.0),
+                gradient.index_select(1, torch.LongTensor(
+                    [0]).cuda()) / (63.0 / 255.0),
             )
             gradient.index_copy_(
                 1,
                 torch.LongTensor([1]).cuda(),
-                gradient.index_select(1, torch.LongTensor([1]).cuda()) / (62.1 / 255.0),
+                gradient.index_select(1, torch.LongTensor(
+                    [1]).cuda()) / (62.1 / 255.0),
             )
             gradient.index_copy_(
                 1,
                 torch.LongTensor([2]).cuda(),
-                gradient.index_select(1, torch.LongTensor([2]).cuda()) / (66.7 / 255.0),
+                gradient.index_select(1, torch.LongTensor(
+                    [2]).cuda()) / (66.7 / 255.0),
             )
         elif net_type == "resnet":
             gradient.index_copy_(
                 1,
                 torch.LongTensor([0]).cuda(),
-                gradient.index_select(1, torch.LongTensor([0]).cuda()) / (0.2023),
+                gradient.index_select(
+                    1, torch.LongTensor([0]).cuda()) / (0.2023),
             )
             gradient.index_copy_(
                 1,
                 torch.LongTensor([1]).cuda(),
-                gradient.index_select(1, torch.LongTensor([1]).cuda()) / (0.1994),
+                gradient.index_select(
+                    1, torch.LongTensor([1]).cuda()) / (0.1994),
             )
             gradient.index_copy_(
                 1,
                 torch.LongTensor([2]).cuda(),
-                gradient.index_select(1, torch.LongTensor([2]).cuda()) / (0.2010),
+                gradient.index_select(
+                    1, torch.LongTensor([2]).cuda()) / (0.2010),
             )
 
         tempInputs = torch.add(data.data, -magnitude, gradient)
@@ -364,13 +468,14 @@ def get_Mahalanobis_score_adv(
     total = 0
 
     for data_index in range(int(np.floor(test_data.size(0) / batch_size))):
-        target = test_label[total : total + batch_size].cuda()
-        data = test_data[total : total + batch_size].cuda()
+        target = test_label[total: total + batch_size].cuda()
+        data = test_data[total: total + batch_size].cuda()
         total += batch_size
         data, target = Variable(data, requires_grad=True), Variable(target)
 
         out_features = model.intermediate_forward(data, layer_index)
-        out_features = out_features.view(out_features.size(0), out_features.size(1), -1)
+        out_features = out_features.view(
+            out_features.size(0), out_features.size(1), -1)
         out_features = torch.mean(out_features, 2)
 
         gaussian_score = 0
@@ -384,11 +489,13 @@ def get_Mahalanobis_score_adv(
             if i == 0:
                 gaussian_score = term_gau.view(-1, 1)
             else:
-                gaussian_score = torch.cat((gaussian_score, term_gau.view(-1, 1)), 1)
+                gaussian_score = torch.cat(
+                    (gaussian_score, term_gau.view(-1, 1)), 1)
 
         # Input_processing
         sample_pred = gaussian_score.max(1)[1]
-        batch_sample_mean = sample_mean[layer_index].index_select(0, sample_pred)
+        batch_sample_mean = sample_mean[layer_index].index_select(
+            0, sample_pred)
         zero_f = out_features - Variable(batch_sample_mean)
         pure_gau = (
             -0.5
@@ -405,33 +512,39 @@ def get_Mahalanobis_score_adv(
             gradient.index_copy_(
                 1,
                 torch.LongTensor([0]).cuda(),
-                gradient.index_select(1, torch.LongTensor([0]).cuda()) / (63.0 / 255.0),
+                gradient.index_select(1, torch.LongTensor(
+                    [0]).cuda()) / (63.0 / 255.0),
             )
             gradient.index_copy_(
                 1,
                 torch.LongTensor([1]).cuda(),
-                gradient.index_select(1, torch.LongTensor([1]).cuda()) / (62.1 / 255.0),
+                gradient.index_select(1, torch.LongTensor(
+                    [1]).cuda()) / (62.1 / 255.0),
             )
             gradient.index_copy_(
                 1,
                 torch.LongTensor([2]).cuda(),
-                gradient.index_select(1, torch.LongTensor([2]).cuda()) / (66.7 / 255.0),
+                gradient.index_select(1, torch.LongTensor(
+                    [2]).cuda()) / (66.7 / 255.0),
             )
         elif net_type == "resnet":
             gradient.index_copy_(
                 1,
                 torch.LongTensor([0]).cuda(),
-                gradient.index_select(1, torch.LongTensor([0]).cuda()) / (0.2023),
+                gradient.index_select(
+                    1, torch.LongTensor([0]).cuda()) / (0.2023),
             )
             gradient.index_copy_(
                 1,
                 torch.LongTensor([1]).cuda(),
-                gradient.index_select(1, torch.LongTensor([1]).cuda()) / (0.1994),
+                gradient.index_select(
+                    1, torch.LongTensor([1]).cuda()) / (0.1994),
             )
             gradient.index_copy_(
                 1,
                 torch.LongTensor([2]).cuda(),
-                gradient.index_select(1, torch.LongTensor([2]).cuda()) / (0.2010),
+                gradient.index_select(
+                    1, torch.LongTensor([2]).cuda()) / (0.2010),
             )
         tempInputs = torch.add(data.data, -magnitude, gradient)
 
@@ -482,10 +595,10 @@ def get_LID(
         LID_noisy.append([])
 
     for data_index in range(int(np.floor(test_clean_data.size(0) / batch_size))):
-        data = test_clean_data[total : total + batch_size].cuda()
-        adv_data = test_adv_data[total : total + batch_size].cuda()
-        noisy_data = test_noisy_data[total : total + batch_size].cuda()
-        target = test_label[total : total + batch_size].cuda()
+        data = test_clean_data[total: total + batch_size].cuda()
+        adv_data = test_adv_data[total: total + batch_size].cuda()
+        noisy_data = test_noisy_data[total: total + batch_size].cuda()
+        target = test_label[total: total + batch_size].cuda()
 
         total += batch_size
         data, target = Variable(data, volatile=True), Variable(target)
@@ -503,7 +616,8 @@ def get_LID(
                 )
             )
 
-        output, out_features = model.feature_list(Variable(adv_data, volatile=True))
+        output, out_features = model.feature_list(
+            Variable(adv_data, volatile=True))
         X_act_adv = []
         for i in range(num_output):
             out_features[i] = out_features[i].view(
@@ -516,7 +630,8 @@ def get_LID(
                 )
             )
 
-        output, out_features = model.feature_list(Variable(noisy_data, volatile=True))
+        output, out_features = model.feature_list(
+            Variable(noisy_data, volatile=True))
         X_act_noisy = []
         for i in range(num_output):
             out_features[i] = out_features[i].view(
@@ -540,8 +655,10 @@ def get_LID(
                 lid_score = mle_batch(X_act[j], X_act[j], k=overlap)
                 lid_score = lid_score.reshape((lid_score.shape[0], -1))
                 lid_adv_score = mle_batch(X_act[j], X_act_adv[j], k=overlap)
-                lid_adv_score = lid_adv_score.reshape((lid_adv_score.shape[0], -1))
-                lid_noisy_score = mle_batch(X_act[j], X_act_noisy[j], k=overlap)
+                lid_adv_score = lid_adv_score.reshape(
+                    (lid_adv_score.shape[0], -1))
+                lid_noisy_score = mle_batch(
+                    X_act[j], X_act_noisy[j], k=overlap)
                 lid_noisy_score = lid_noisy_score.reshape(
                     (lid_noisy_score.shape[0], -1)
                 )
