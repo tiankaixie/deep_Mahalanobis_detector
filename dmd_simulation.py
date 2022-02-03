@@ -103,7 +103,8 @@ def simulation_cifar10_resnet_imagenet():
     )
 
     print("get Mahalanobis scores")
-    m_list = [0.0, 0.01, 0.005, 0.002, 0.0014, 0.001, 0.0005]
+    # m_list = [0.0, 0.01, 0.005, 0.002, 0.0014, 0.001, 0.0005]
+    m_list = [0.0]
     for magnitude in m_list:
         print("Noise: " + str(magnitude))
         for i in range(num_output):
