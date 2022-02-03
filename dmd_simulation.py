@@ -106,11 +106,11 @@ def simulation_cifar10_resnet_imagenet():
 
     print("compute performance training")
     lib_generation.compute_performance(
-        model, arg.num_classes, feature_list, train_loader, args.net_type + "_" + args.dataset + "_train")
+        model, args.num_classes, feature_list, train_loader, args.net_type + "_" + args.dataset + "_train")
 
     print("compute performance testing")
     lib_generation.compute_performance(
-        model, arg.num_classes, feature_list, test_loader, args.net_type + "_" + args.dataset + "_test")
+        model, args.num_classes, feature_list, test_loader, args.net_type + "_" + args.dataset + "_test")
 
     # print("get sample mean and covariance")
     # sample_mean, precision = lib_generation.sample_estimator_2(
