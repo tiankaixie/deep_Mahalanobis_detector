@@ -1,3 +1,4 @@
+from ast import arg
 import os
 import models
 import torch
@@ -103,10 +104,18 @@ def simulation_cifar10_resnet_imagenet():
         feature_list[count] = out.size(1)
         count += 1
 
-    print("get sample mean and covariance")
-    sample_mean, precision = lib_generation.sample_estimator_2(
-        model, args.num_classes, feature_list, train_loader
-    )
+    print("compute performance training")
+    lib_generation.compute_performance(
+        model, arg.num_classes, feature_list, train_loader, args.net_type + "_" + args.dataset + "_train")
+
+    print("compute performance testing")
+    lib_generation.compute_performance(
+        model, arg.num_classes, feature_list, test_loader, args.net_type + "_" + args.dataset + "_test")
+
+    # print("get sample mean and covariance")
+    # sample_mean, precision = lib_generation.sample_estimator_2(
+    #     model, args.num_classes, feature_list, train_loader
+    # )
 
     # print("get Mahalanobis scores")
     # # m_list = [0.0, 0.01, 0.005, 0.002, 0.0014, 0.001, 0.0005]

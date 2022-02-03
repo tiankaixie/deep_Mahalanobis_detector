@@ -46,8 +46,50 @@ def merge_and_generate_labels(X_pos, X_neg):
     return X, y
 
 
+def compute_performance(model, num_classes, feature_list, data_loader, file_name):
+    f1 = open("./simulation_output/" + file_name + ".txt", "w")
+    model.eval()
+    correct, total = 0, 0
+    num_output = len(feature_list)
+    num_sample_per_class = np.empty(num_classes)
+    num_sample_per_class.fill(0)
+    list_features = []
+    for i in range(num_output):
+        temp_list = []
+        for j in range(num_classes):
+            temp_list.append(0)
+        list_features.append(temp_list)
+
+    instance_count = 0
+    wrong_prediction_count = 0
+    for data, target in data_loader:
+        total += data.size(0)
+        data = data.cuda()
+        data = Variable(data, volatile=True)
+        output, out_features = model.feature_list(data)
+        # compute the accuracy
+        pred = output.data.max(1)[1]
+
+        for i in range(data.size(0)):
+            if pred.cpu().numpy()[i] != target.cpu().numpy()[i]:
+                f1.write("{}, {}, {}\n".format(instance_count,
+                         pred.cpu().numpy()[i], target.cpu().numpy()[i]))
+
+                wrong_prediction_count += 1
+            instance_count += 1
+
+        equal_flag = pred.eq(target.cuda()).cpu()
+        correct += equal_flag.sum()
+
+    print(f'correct: {correct}')
+    print(f'wrong: {wrong_prediction_count}')
+    print(f'total: {total}')
+    print("\n Accuracy:({:.2f}%)\n".format(100.0 * correct / total))
+
+
 def sample_estimator_2(model, num_classes, feature_list, train_loader):
     import sklearn.covariance
+    f1 = open("./simulation_output/resnet_training.txt", "w")
     model.eval()
     group_lasso = sklearn.covariance.EmpiricalCovariance(assume_centered=False)
     correct, total = 0, 0
@@ -73,8 +115,9 @@ def sample_estimator_2(model, num_classes, feature_list, train_loader):
 
         for i in range(data.size(0)):
             if pred.cpu().numpy()[i] != target.cpu().numpy()[i]:
-                print(
-                    f'wrong prediction: {instance_count} - {pred.cpu().numpy()[i]} != {target.cpu().numpy()[i]}')
+                f1.write("{}, {}, {}\n".format(instance_count,
+                         pred.cpu().numpy()[i], target.cpu().numpy()[i]))
+
                 wrong_prediction_count += 1
             instance_count += 1
 
@@ -144,7 +187,7 @@ def sample_estimator_2(model, num_classes, feature_list, train_loader):
     print(f'wrong: {wrong_prediction_count}')
     print(f'total: {total}')
     print("\n Training Accuracy:({:.2f}%)\n".format(100.0 * correct / total))
-
+    f1.close()
     return sample_class_mean, precision
 
 
