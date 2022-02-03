@@ -70,11 +70,11 @@ def sample_estimator_2(model, num_classes, feature_list, train_loader):
         output, out_features = model.feature_list(data)
         # compute the accuracy
         pred = output.data.max(1)[1]
-        print(f'pred: {pred.data.cpu().numpy().shape}')
-        print(f'target: {target.data.cpu().numpy().shape}')
+
         for i in range(data.size(0)):
             if pred.cpu().numpy()[i] != target.cpu().numpy()[i]:
-                print(f'wrong prediction: {instance_count}')
+                print(
+                    f'wrong prediction: {instance_count} - {pred.cpu().numpy()[i]} != {target.cpu().numpy()[i]}')
                 wrong_prediction_count += 1
             instance_count += 1
 
@@ -90,12 +90,12 @@ def sample_estimator_2(model, num_classes, feature_list, train_loader):
             out_features[i] = torch.mean(out_features[i].data, 2)
 
         # compute the accuracy
-        pred = output.data.max(1)[1]
+        # pred = output.data.max(1)[1]
         # print(f'pred: {pred.data.cpu().numpy().shape}')
         # print(f'target: {target.data.cpu().numpy().shape}')
 
-        equal_flag = pred.eq(target.cuda()).cpu()
-        correct += equal_flag.sum()
+        # equal_flag = pred.eq(target.cuda()).cpu()
+        # correct += equal_flag.sum()
 
         # construct the sample matrix
         for i in range(data.size(0)):
