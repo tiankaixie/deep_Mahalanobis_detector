@@ -61,14 +61,29 @@ def sample_estimator_2(model, num_classes, feature_list, train_loader):
             temp_list.append(0)
         list_features.append(temp_list)
 
+    instance_count = 0
+    wrong_prediction_count = 0
     for data, target in train_loader:
         total += data.size(0)
         data = data.cuda()
         data = Variable(data, volatile=True)
         output, out_features = model.feature_list(data)
+        # compute the accuracy
+        pred = output.data.max(1)[1]
+        print(f'pred: {pred.data.cpu().numpy().shape}')
+        print(f'target: {target.data.cpu().numpy().shape}')
+        for i in range(data.size(0)):
+            if pred.cpu().numpy()[i] != target.cpu().numpy()[i]:
+                print(f'wrong prediction: {instance_count}')
+                wrong_prediction_count += 1
+            instance_count += 1
+
+        equal_flag = pred.eq(target.cuda()).cpu()
+        correct += equal_flag.sum()
 
         # get hidden features
         for i in range(num_output):
+
             out_features[i] = out_features[i].view(
                 out_features[i].size(0), out_features[i].size(1), -1
             )
@@ -76,8 +91,9 @@ def sample_estimator_2(model, num_classes, feature_list, train_loader):
 
         # compute the accuracy
         pred = output.data.max(1)[1]
-        print(f'pred: {pred.data.cpu().numpy().shape}')
-        print(f'target: {target.data.cpu().numpy().shape}')
+        # print(f'pred: {pred.data.cpu().numpy().shape}')
+        # print(f'target: {target.data.cpu().numpy().shape}')
+
         equal_flag = pred.eq(target.cuda()).cpu()
         correct += equal_flag.sum()
 
@@ -124,6 +140,9 @@ def sample_estimator_2(model, num_classes, feature_list, train_loader):
         temp_precision = torch.from_numpy(temp_precision).float().cuda()
         precision.append(temp_precision)
 
+    print(f'correct: {correct}')
+    print(f'wrong: {wrong_prediction_count}')
+    print(f'total: {total}')
     print("\n Training Accuracy:({:.2f}%)\n".format(100.0 * correct / total))
 
     return sample_class_mean, precision
