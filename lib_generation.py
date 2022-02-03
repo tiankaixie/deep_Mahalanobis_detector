@@ -76,8 +76,8 @@ def sample_estimator_2(model, num_classes, feature_list, train_loader):
 
         # compute the accuracy
         pred = output.data.max(1)[1]
-        print(f'pred: {pred.data.cpu().numpy()}')
-        print(f'target: {target.data.cpu().numpy()}')
+        print(f'pred: {pred.data.cpu().numpy().size()}')
+        print(f'target: {target.data.cpu().numpy().size()}')
         equal_flag = pred.eq(target.cuda()).cpu()
         correct += equal_flag.sum()
 
