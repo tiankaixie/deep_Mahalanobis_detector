@@ -104,7 +104,7 @@ def simulation_cifar10_resnet_imagenet():
         count += 1
 
     print("get sample mean and covariance")
-    sample_mean, precision = lib_generation.sample_estimator(
+    sample_mean, precision = lib_generation.sample_estimator_2(
         model, args.num_classes, feature_list, train_loader
     )
 
