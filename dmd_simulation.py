@@ -178,9 +178,9 @@ def simulation_cifar10_resnet_imagenet():
             print(Mahalanobis_in)
             print(Mahalanobis_out)
     m1 = "./simulation_output/"+ args.net_type + "_" + args.dataset + "_test_m.txt"
-    np.save(m1, Mahalanobis_in, delimiter=',')
+    np.savetxt(m1, Mahalanobis_in, delimiter=',')
     m2 = "./simulation_output/"+ args.net_type + "_imagenet_m.txt"
-    np.save(m2, Mahalanobis_out, delimiter=',')
+    np.savetxt(m2, Mahalanobis_out, delimiter=',')
     # (
     #     Mahalanobis_data,
     #     Mahalanobis_labels,
