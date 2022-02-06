@@ -147,6 +147,26 @@ def simulation_cifar10_resnet_imagenet():
                     (Mahalanobis_in, M_in.reshape((M_in.shape[0], -1))), axis=1
                 )
 
+            O_in = lib_generation.get_Mahalanobis_score(
+                model,
+                train_loader,
+                args.num_classes,
+                args.outf,
+                True,
+                args.net_type,
+                sample_mean,
+                precision,
+                i,
+                magnitude,
+            )
+            O_in = np.asarray(O_in, dtype=np.float32)
+            if i == 0:
+                Origin_Mahalanobis_in = O_in.reshape((O_in.shape[0], -1))
+            else:
+                Origin_Mahalanobis_in = np.concatenate(
+                    (Origin_Mahalanobis_in, O_in.reshape((O_in.shape[0], -1))), axis=1
+                )
+
         for out_dist in out_dist_list:
             out_test_loader = data_loader.getNonTargetDataSet(
                 out_dist, args.batch_size, in_transform, args.dataroot
@@ -177,10 +197,12 @@ def simulation_cifar10_resnet_imagenet():
             Mahalanobis_out = np.asarray(Mahalanobis_out, dtype=np.float32)
             print(Mahalanobis_in)
             print(Mahalanobis_out)
-    m1 = "./simulation_output/"+ args.net_type + "_" + args.dataset + "_test_m.txt"
-    np.savetxt(m1, Mahalanobis_in, delimiter=',')
-    m2 = "./simulation_output/"+ args.net_type + "_imagenet_m.txt"
-    np.savetxt(m2, Mahalanobis_out, delimiter=',')
+    m0 = "./simulation_output/" + args.net_type + "_" + args.dataset + "_train_m.txt"
+    np.savetxt(m0, Origin_Mahalanobis_in, delimiter=",")
+    m1 = "./simulation_output/" + args.net_type + "_" + args.dataset + "_test_m.txt"
+    np.savetxt(m1, Mahalanobis_in, delimiter=",")
+    m2 = "./simulation_output/" + args.net_type + "_imagenet_m.txt"
+    np.savetxt(m2, Mahalanobis_out, delimiter=",")
     # (
     #     Mahalanobis_data,
     #     Mahalanobis_labels,
