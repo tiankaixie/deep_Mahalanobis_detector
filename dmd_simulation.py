@@ -6,6 +6,7 @@ import data_loader
 import argparse
 import numpy as np
 import lib_generation
+from PIL import Image
 
 
 from torchvision import transforms
@@ -219,5 +220,47 @@ def simulation_cifar10_resnet_imagenet():
     # np.save(file_name, Mahalanobis_data)
 
 
+def transfer_numpy_to_png():
+    print("load target data: cifar10")
+    in_transform = transforms.Compose(
+            [
+                transforms.ToTensor(),
+                # transforms.Normalize(
+                #     (0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)
+                # ),
+            ]
+        )
+    train_loader, test_loader = data_loader.getTargetDataSet(
+        args.dataset, args.batch_size, in_transform, args.dataroot
+    )
+
+    instance_count = 0
+    for data, _ in train_loader:
+        print(data.cpu().numpy().shape)
+        temp = data.cpu().numpy()
+        for i in range(temp.shape[0]):
+            print(f'instance: {instance_count}')
+            t = np.array(temp[i])
+            print(t.shape)
+            t = np.transpose(t, (1, 2, 0))
+            print(t.shape)
+            new_im = Image.fromarray((t * 255).astype(np.uint8))
+            new_im.save("./data_image/cifar10_train_" + str(instance_count) + ".png")
+            instance_count += 1
+
+    instance_count = 0
+    for data, _ in test_loader:
+        print(data.cpu().numpy().shape)
+        temp = data.cpu().numpy()
+        for i in range(temp.shape[0]):
+            print(f'instance: {instance_count}')
+            t = np.array(temp[i])
+            print(t.shape)
+            t = np.transpose(t, (1, 2, 0))
+            print(t.shape)
+            new_im = Image.fromarray((t * 255).astype(np.uint8))
+            new_im.save("./data_image/cifar10_test_" + str(instance_count) + ".png")
+            instance_count += 1
+
 if __name__ == "__main__":
-    simulation_cifar10_resnet_imagenet()
+    transfer_numpy_to_png()

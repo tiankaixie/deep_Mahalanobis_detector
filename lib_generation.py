@@ -99,6 +99,7 @@ def compute_performance(model, num_classes, feature_list, data_loader, file_name
     print(f"total: {total}")
     print("\n Accuracy:({:.2f}%)\n".format(100.0 * correct / total))
     f1.close()
+    f2.close()
 
 
 def sample_estimator_2(model, num_classes, feature_list, train_loader):
