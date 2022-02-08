@@ -7,11 +7,14 @@ import argparse
 import numpy as np
 import lib_generation
 from PIL import Image
+from tqdm import tqdm
 
 
 from torchvision import transforms
 from torch.autograd import Variable
-
+from os import listdir
+from os.path import isfile, join
+from sewar.full_ref import uqi
 
 parser = argparse.ArgumentParser(description="PyTorch code: Mahalanobis detector")
 parser.add_argument(
@@ -21,11 +24,11 @@ parser.add_argument(
     metavar="N",
     help="batch size for data loader",
 )
-parser.add_argument("--dataset", required=True, help="cifar10 | cifar100 | svhn")
+parser.add_argument("--dataset", default="cifar10", help="cifar10 | cifar100 | svhn")
 parser.add_argument("--dataroot", default="./data", help="path to dataset")
 parser.add_argument("--outf", default="./output/", help="folder to output results")
 parser.add_argument("--num_classes", type=int, default=10, help="the # of classes")
-parser.add_argument("--net_type", required=True, help="resnet | densenet")
+parser.add_argument("--net_type", default="resnet", help="resnet | densenet")
 parser.add_argument("--gpu", type=int, default=0, help="gpu index")
 args = parser.parse_args()
 print(args)
@@ -262,5 +265,65 @@ def transfer_numpy_to_png():
             new_im.save("./data_image/cifar10_test_" + str(instance_count) + ".png")
             instance_count += 1
 
+def compute_distance_metrix():
+    # f1 = open("./distance_matrix/similarity.txt", "w")
+    # f2 = open("./distance_matrix/mahalanobis.txt", "w")
+    f3 = open("./distance_matrix/image_id_map.txt", "w")
+    lookup_path = "./data_image/"
+    onlyfiles = [f for f in listdir(lookup_path) if isfile(join(lookup_path, f)) and f.endswith(".png")]
+    print(onlyfiles)
+    print(f"process similarity of {len(onlyfiles)} images...")
+    for i in tqdm(range(len(onlyfiles))):
+        # temp_res = []
+        # for j in tqdm(range(len(onlyfiles)), leave=False):
+        #     if i == j:
+        #         temp_res.append(0)
+        #     else:
+        #         temp_res.append(1 - compute_similarity(lookup_path + onlyfiles[i], lookup_path + onlyfiles[j]))
+        f3.write(onlyfiles[i] + "\n")
+    
+    # np.save("./distance_matrix/similarity.txt", np.array(res_matrix))
+    # print(np.array(res_matrix))
+    
+    # f1.close(
+    # f2.close()
+    f3.close()
+    file = open("./distance_matrix/image_id_map.txt", "r")
+    content = file.read().split("\n")
+
+    print(content[0])
+    file.close()
+
+
+
+def compute_similarity(img1, img2):
+    img1 = Image.open(img1)
+    img2 = Image.open(img2)
+    img1 = np.array(img1)
+    img2 = np.array(img2)
+
+    # print(uqi(img1, img2))
+    return uqi(img1,img2)
+
+def quick_select(arr, start, end, k):
+    left, right = start, end
+    pivot = arr[start + (end - start) // 2]
+    while left <= right:
+        while left <= right and pivot < arr[left]:
+            left += 1
+        while left <= right and pivot > arr[right]:
+            right -= 1
+        if left <= right:
+            arr[left], arr[right] = arr[right], arr[left]
+            left += 1
+            right -= 1
+    if start + k - 1 <= right:
+        return quick_select(arr, start, right, k)
+    if start + k - 1 >= left:
+        return quick_select(arr, left, end, k - (left - start))
+    
+    return arr[start + k - 1]
+
 if __name__ == "__main__":
-    transfer_numpy_to_png()
+    # transfer_numpy_to_png()
+    compute_distance_metrix()
