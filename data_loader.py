@@ -72,7 +72,7 @@ def getCIFAR10(
         train_loader = torch.utils.data.DataLoader(
             datasets.CIFAR10(root=data_root, train=True, download=True, transform=TF),
             batch_size=batch_size,
-            shuffle=True,
+            shuffle=False,
             **kwargs
         )
         ds.append(train_loader)
@@ -104,7 +104,7 @@ def getCIFAR100(
         train_loader = torch.utils.data.DataLoader(
             datasets.CIFAR100(root=data_root, train=True, download=True, transform=TF),
             batch_size=batch_size,
-            shuffle=True,
+            shuffle=False,
             **kwargs
         )
         ds.append(train_loader)

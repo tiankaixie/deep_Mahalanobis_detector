@@ -199,8 +199,8 @@ def simulation_cifar10_resnet_imagenet():
 
             Mahalanobis_in = np.asarray(Mahalanobis_in, dtype=np.float32)
             Mahalanobis_out = np.asarray(Mahalanobis_out, dtype=np.float32)
-            print(Mahalanobis_in)
-            print(Mahalanobis_out)
+            # print(Mahalanobis_in)
+            # print(Mahalanobis_out)
     m0 = "./simulation_output/" + args.net_type + "_" + args.dataset + "_train_m.txt"
     np.savetxt(m0, Origin_Mahalanobis_in, delimiter=",")
     m1 = "./simulation_output/" + args.net_type + "_" + args.dataset + "_test_m.txt"
@@ -226,13 +226,13 @@ def simulation_cifar10_resnet_imagenet():
 def transfer_numpy_to_png():
     print("load target data: cifar10")
     in_transform = transforms.Compose(
-            [
-                transforms.ToTensor(),
-                # transforms.Normalize(
-                #     (0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)
-                # ),
-            ]
-        )
+        [
+            transforms.ToTensor(),
+            # transforms.Normalize(
+            #     (0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)
+            # ),
+        ]
+    )
     train_loader, test_loader = data_loader.getTargetDataSet(
         args.dataset, args.batch_size, in_transform, args.dataroot
     )
@@ -242,7 +242,7 @@ def transfer_numpy_to_png():
         print(data.cpu().numpy().shape)
         temp = data.cpu().numpy()
         for i in range(temp.shape[0]):
-            print(f'instance: {instance_count}')
+            print(f"instance: {instance_count}")
             t = np.array(temp[i])
             print(t.shape)
             t = np.transpose(t, (1, 2, 0))
@@ -256,7 +256,7 @@ def transfer_numpy_to_png():
         print(data.cpu().numpy().shape)
         temp = data.cpu().numpy()
         for i in range(temp.shape[0]):
-            print(f'instance: {instance_count}')
+            print(f"instance: {instance_count}")
             t = np.array(temp[i])
             print(t.shape)
             t = np.transpose(t, (1, 2, 0))
@@ -265,12 +265,17 @@ def transfer_numpy_to_png():
             new_im.save("./data_image/cifar10_test_" + str(instance_count) + ".png")
             instance_count += 1
 
+
 def compute_distance_metrix():
     # f1 = open("./distance_matrix/similarity.txt", "w")
     # f2 = open("./distance_matrix/mahalanobis.txt", "w")
     f3 = open("./distance_matrix/image_id_map.txt", "w")
     lookup_path = "./data_image/"
-    onlyfiles = [f for f in listdir(lookup_path) if isfile(join(lookup_path, f)) and f.endswith(".png")]
+    onlyfiles = [
+        f
+        for f in listdir(lookup_path)
+        if isfile(join(lookup_path, f)) and f.endswith(".png")
+    ]
     print(onlyfiles)
     print(f"process similarity of {len(onlyfiles)} images...")
     for i in tqdm(range(len(onlyfiles))):
@@ -281,10 +286,10 @@ def compute_distance_metrix():
         #     else:
         #         temp_res.append(1 - compute_similarity(lookup_path + onlyfiles[i], lookup_path + onlyfiles[j]))
         f3.write(onlyfiles[i] + "\n")
-    
+
     # np.save("./distance_matrix/similarity.txt", np.array(res_matrix))
     # print(np.array(res_matrix))
-    
+
     # f1.close(
     # f2.close()
     f3.close()
@@ -295,7 +300,6 @@ def compute_distance_metrix():
     file.close()
 
 
-
 def compute_similarity(img1, img2):
     img1 = Image.open(img1)
     img2 = Image.open(img2)
@@ -303,7 +307,8 @@ def compute_similarity(img1, img2):
     img2 = np.array(img2)
 
     # print(uqi(img1, img2))
-    return uqi(img1,img2)
+    return uqi(img1, img2)
+
 
 def quick_select(arr, start, end, k):
     left, right = start, end
@@ -321,9 +326,11 @@ def quick_select(arr, start, end, k):
         return quick_select(arr, start, right, k)
     if start + k - 1 >= left:
         return quick_select(arr, left, end, k - (left - start))
-    
+
     return arr[start + k - 1]
 
+
 if __name__ == "__main__":
+    simulation_cifar10_resnet_imagenet()
     # transfer_numpy_to_png()
-    compute_distance_metrix()
+    # compute_distance_metrix()
