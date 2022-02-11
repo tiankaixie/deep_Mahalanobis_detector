@@ -52,6 +52,7 @@ def merge_and_generate_labels(X_pos, X_neg):
 def compute_performance(model, num_classes, feature_list, data_loader, file_name):
     f1 = open("./simulation_output/" + file_name + "_false.txt", "w")
     f2 = open("./simulation_output/" + file_name + "_true.txt", "w")
+    f3 = "./simulation_output/" + file_name + "_softmax.txt"
     model.eval()
     correct, total = 0, 0
     num_output = len(feature_list)
@@ -66,6 +67,7 @@ def compute_performance(model, num_classes, feature_list, data_loader, file_name
 
     instance_count = 0
     wrong_prediction_count = 0
+    softmax = None
     for data, target in data_loader:
         total += data.size(0)
         data = data.cuda()
@@ -73,7 +75,14 @@ def compute_performance(model, num_classes, feature_list, data_loader, file_name
         output, out_features = model.feature_list(data)
         # compute the accuracy
         pred = output.data.max(1)[1]
-
+        # print("fuge")
+        # print(output.data.cpu().numpy().shape)
+        batch_softmax = output.data.cpu().numpy()
+        if softmax is None:
+            softmax = batch_softmax
+        else:
+            print("concatenate")
+            softmax = np.concatenate((softmax, batch_softmax))
         for i in range(data.size(0)):
             if pred.cpu().numpy()[i] != target.cpu().numpy()[i]:
                 f1.write(
@@ -89,11 +98,15 @@ def compute_performance(model, num_classes, feature_list, data_loader, file_name
                         instance_count, pred.cpu().numpy()[i], target.cpu().numpy()[i]
                     )
                 )
+            
             instance_count += 1
-
+        
+   
         equal_flag = pred.eq(target.cuda()).cpu()
         correct += equal_flag.sum()
 
+    print(softmax.shape)
+    np.savetxt(f3, softmax, delimiter=",")
     print(f"correct: {correct}")
     print(f"wrong: {wrong_prediction_count}")
     print(f"total: {total}")
