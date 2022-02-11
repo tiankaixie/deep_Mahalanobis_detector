@@ -300,15 +300,6 @@ def compute_distance_metrix():
     file.close()
 
 
-def compute_similarity(img1, img2):
-    img1 = Image.open(img1)
-    img2 = Image.open(img2)
-    img1 = np.array(img1)
-    img2 = np.array(img2)
-
-    # print(uqi(img1, img2))
-    return uqi(img1, img2)
-
 
 def quick_select(arr, start, end, k):
     left, right = start, end
