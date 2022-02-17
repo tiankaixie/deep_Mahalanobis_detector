@@ -31,10 +31,20 @@ parser.add_argument("--num_classes", type=int, default=10, help="the # of classe
 parser.add_argument("--net_type", default="resnet", help="resnet | densenet")
 parser.add_argument("--gpu", type=int, default=0, help="gpu index")
 args = parser.parse_args()
-print(args)
 
 
 def simulation_cifar10_resnet_imagenet():
+    """
+    This function simulates trained resnet model on cifar10 dataset, and compute
+    1. cifar training data accuracy
+    2. cifar testing data accuracy
+    3. cifar training data mahalanobis distance
+    4. cifar testing data mahalanobis distance
+    The results are saved in ./simulation_output/
+    _true.txt is for true prediction
+    _false.txt is for false prediction
+    _m.txt is for mahalanobis distance for each instance
+    """
     # set the path to pre-trained model and output
     pre_trained_net = "./pre_trained/" + args.net_type + "_" + args.dataset + ".pth"
     args.outf = args.outf + args.net_type + "_" + args.dataset + "/"
@@ -201,26 +211,13 @@ def simulation_cifar10_resnet_imagenet():
             Mahalanobis_out = np.asarray(Mahalanobis_out, dtype=np.float32)
             # print(Mahalanobis_in)
             # print(Mahalanobis_out)
+
     m0 = "./simulation_output/" + args.net_type + "_" + args.dataset + "_train_m.txt"
     np.savetxt(m0, Origin_Mahalanobis_in, delimiter=",")
     m1 = "./simulation_output/" + args.net_type + "_" + args.dataset + "_test_m.txt"
     np.savetxt(m1, Mahalanobis_in, delimiter=",")
     m2 = "./simulation_output/" + args.net_type + "_imagenet_m.txt"
     np.savetxt(m2, Mahalanobis_out, delimiter=",")
-    # (
-    #     Mahalanobis_data,
-    #     Mahalanobis_labels,
-    # ) = lib_generation.merge_and_generate_labels(
-    #     Mahalanobis_out, Mahalanobis_in
-    # )
-    # file_name = os.path.join(
-    #     args.outf,
-    #     "Mahalanobis_%s_%s_%s.npy" % (str(magnitude), args.dataset, out_dist),
-    # )
-    # Mahalanobis_data = np.concatenate(
-    #     (Mahalanobis_data, Mahalanobis_labels), axis=1
-    # )
-    # np.save(file_name, Mahalanobis_data)
 
 
 def transfer_numpy_to_png():
@@ -264,6 +261,25 @@ def transfer_numpy_to_png():
             new_im = Image.fromarray((t * 255).astype(np.uint8))
             new_im.save("./data_image/cifar10_test_" + str(instance_count) + ".png")
             instance_count += 1
+
+
+def train_ood_detector(Mahalanobis_out, Mahalanobis_in):
+    magnitude = 0.0
+    out_dist = "imagenet"
+    (
+        Mahalanobis_data,
+        Mahalanobis_labels,
+    ) = lib_generation.merge_and_generate_labels(
+        Mahalanobis_out, Mahalanobis_in
+    )
+    file_name = os.path.join(
+        args.outf,
+        "Mahalanobis_%s_%s_%s.npy" % (str(magnitude), args.dataset, out_dist),
+    )
+    Mahalanobis_data = np.concatenate(
+        (Mahalanobis_data, Mahalanobis_labels), axis=1
+    )
+    np.save(file_name, Mahalanobis_data)
 
 
 def compute_distance_metrix():
@@ -323,5 +339,3 @@ def quick_select(arr, start, end, k):
 
 if __name__ == "__main__":
     simulation_cifar10_resnet_imagenet()
-    # transfer_numpy_to_png()
-    # compute_distance_metrix()

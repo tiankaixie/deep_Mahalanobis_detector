@@ -1,6 +1,5 @@
 *.pyc
 lib/__pycache__
-data/*
 output/*
 pre_trained/*
 adv_output/*
