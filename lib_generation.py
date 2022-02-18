@@ -526,7 +526,7 @@ def compute_performance_2(model, num_classes, feature_list, test_data, test_labe
     f2 = open("./simulation_output/" + file_name + "_true.txt", "w")
     f3 = "./simulation_output/" + file_name + "_softmax.txt"
     model.eval()
-    correct, total = 0
+    correct, total = 0, 0
     num_output = len(feature_list)
     num_sample_per_class = np.empty(num_classes)
     num_sample_per_class.fill(0)
