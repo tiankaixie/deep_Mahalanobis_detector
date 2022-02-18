@@ -180,6 +180,7 @@ def simulation_cifar10_resnet_imagenet():
                 Origin_Mahalanobis_in = np.concatenate(
                     (Origin_Mahalanobis_in, O_in.reshape((O_in.shape[0], -1))), axis=1
                 )
+        Mahalanobis_in = np.asarray(Mahalanobis_in, dtype=np.float32)
 
         for out_dist in out_dist_list:
             out_test_loader = data_loader.getNonTargetDataSet(
@@ -207,10 +208,41 @@ def simulation_cifar10_resnet_imagenet():
                         (Mahalanobis_out, M_out.reshape((M_out.shape[0], -1))), axis=1
                     )
 
-            Mahalanobis_in = np.asarray(Mahalanobis_in, dtype=np.float32)
-            Mahalanobis_out = np.asarray(Mahalanobis_out, dtype=np.float32)
-            # print(Mahalanobis_in)
-            # print(Mahalanobis_out)
+        Mahalanobis_out = np.asarray(Mahalanobis_out, dtype=np.float32)
+
+        test_adv_data = torch.load(
+            "./adv_output/resnet_cifar10/"
+            + "adv_data_%s_%s_%s.pth" % (args.net_type, args.dataset, "FGSM")
+        )
+
+        test_label = torch.load(
+            "./adv_output/resnet_cifar10/" + "label_%s_%s_%s.pth" % (args.net_type, args.dataset, "FGSM")
+        )
+
+        lib_generation.compute_performance_2(model, args.num_classes, feature_list, test_adv_data, test_label, args.net_type + "_" + args.dataset + "_adv",)
+
+        for i in range(num_output):
+            A_out = lib_generation.get_Mahalanobis_score_adv(
+                model,
+                test_adv_data,
+                test_label,
+                args.num_classes,
+                "./adv_output/",
+                args.net_type,
+                sample_mean,
+                precision,
+                i,
+                magnitude,
+            )
+            A_out = np.asarray(A_out, dtype=np.float32)
+            if i == 0:
+                Mahalanobis_adv = A_out.reshape((A_out.shape[0], -1))
+            else:
+                Mahalanobis_adv = np.concatenate(
+                    (Mahalanobis_adv, A_out.reshape((A_out.shape[0], -1))), axis=1
+                )
+        
+
 
     m0 = "./simulation_output/" + args.net_type + "_" + args.dataset + "_train_m.txt"
     np.savetxt(m0, Origin_Mahalanobis_in, delimiter=",")
@@ -218,6 +250,8 @@ def simulation_cifar10_resnet_imagenet():
     np.savetxt(m1, Mahalanobis_in, delimiter=",")
     m2 = "./simulation_output/" + args.net_type + "_imagenet_m.txt"
     np.savetxt(m2, Mahalanobis_out, delimiter=",")
+    m3 = "./simulation_output/" + args.net_type + "_" + args.dataset +"_adv_m.txt"
+    np.savetxt(m3, Mahalanobis_adv, delimiter=",")
 
 
 def transfer_numpy_to_png():

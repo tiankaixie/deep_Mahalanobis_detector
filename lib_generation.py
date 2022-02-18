@@ -521,6 +521,80 @@ def get_posterior(model, net_type, test_loader, magnitude, temperature, outf, ou
     g.close()
 
 
+def compute_performance_2(model, num_classes, feature_list, test_data, test_label, file_name):
+    f1 = open("./simulation_output/" + file_name, + "_false.txt" "w")
+    f2 = open("./simulation_output/" + file_name, + "_true.txt" "w")
+    f3 = "./simulation_output/" + file_name + "_softmax.txt"
+    model.eval()
+    correct, total = 0
+    num_output = len(feature_list)
+    num_sample_per_class = np.empty(num_classes)
+    num_sample_per_class.fill(0)
+    list_features = []
+    for i in range(num_output):
+        temp_list = []
+        for j in range(num_classes):
+            temp_list.append(0)
+        list_features.append(temp_list)
+
+    instance_count = 0
+    wrong_prediction_count = 0
+    softmax = None
+    batch_size = 100
+
+    for _ in range(int(np.floor(test_data.size(0) / batch_size))):
+        target = test_label[total : total + batch_size].cuda()
+        data = test_data[total : total + batch_size].cuda()
+        total += batch_size
+        data, target = Variable(data, requires_grad=True), Variable(target)
+
+        print(f'data shape: {data.shape}')
+        print(f'target shape: {target.shape}')
+        data = data.cuda()
+        data = Variable(data, volatile=True)
+        output, out_features = model.feature_list(data)
+        # compute the accuracy
+        pred = output.data.max(1)[1]
+        # print("fuge")
+        # print(output.data.cpu().numpy().shape)
+        batch_softmax = output.data.cpu().numpy()
+        if softmax is None:
+            softmax = batch_softmax
+        else:
+            print("concatenate")
+            softmax = np.concatenate((softmax, batch_softmax))
+        for i in range(data.size(0)):
+            if pred.cpu().numpy()[i] != target.cpu().numpy()[i]:
+                f1.write(
+                    "{}, {}, {}\n".format(
+                        instance_count, pred.cpu().numpy()[i], target.cpu().numpy()[i]
+                    )
+                )
+
+                wrong_prediction_count += 1
+            else:
+                f2.write(
+                    "{}, {}, {}\n".format(
+                        instance_count, pred.cpu().numpy()[i], target.cpu().numpy()[i]
+                    )
+                )
+            
+            instance_count += 1
+        
+   
+        equal_flag = pred.eq(target.cuda()).cpu()
+        correct += equal_flag.sum()
+
+    print(softmax.shape)
+    np.savetxt(f3, softmax, delimiter=",")
+    print(f"correct: {correct}")
+    print(f"wrong: {wrong_prediction_count}")
+    print(f"total: {total}")
+    print("\n Accuracy:({:.2f}%)\n".format(100.0 * correct / total))
+    f1.close()
+    f2.close()
+
+
 def get_Mahalanobis_score_adv(
     model,
     test_data,
