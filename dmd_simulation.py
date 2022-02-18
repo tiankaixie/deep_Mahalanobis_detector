@@ -295,6 +295,22 @@ def transfer_numpy_to_png():
             new_im = Image.fromarray((t * 255).astype(np.uint8))
             new_im.save("./data_image/cifar10_test_" + str(instance_count) + ".png")
             instance_count += 1
+    
+    test_adv_data = torch.load(
+            "./adv_output/resnet_cifar10/"
+            + "adv_data_%s_%s_%s.pth" % (args.net_type, args.dataset, "FGSM")
+        )
+    
+    for i in range(test_adv_data.shape[0]):
+        print(f"instance: {instance_count}")
+        t = np.array(test_adv_data[i])
+        print(t.shape)
+        t = np.transpose(t, (1, 2, 0))
+        print(t.shape)
+        new_im = Image.fromarray((t * 255).astype(np.uint8))
+        new_im.save("./data_image/cifar10_test_" + str(instance_count) + ".png")
+        instance_count += 1
+
 
 
 def train_ood_detector(Mahalanobis_out, Mahalanobis_in):
@@ -372,4 +388,5 @@ def quick_select(arr, start, end, k):
 
 
 if __name__ == "__main__":
-    simulation_cifar10_resnet_imagenet()
+    # simulation_cifar10_resnet_imagenet()
+    transfer_numpy_to_png()

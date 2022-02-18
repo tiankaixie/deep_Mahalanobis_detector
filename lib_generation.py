@@ -522,6 +522,9 @@ def get_posterior(model, net_type, test_loader, magnitude, temperature, outf, ou
 
 
 def compute_performance_2(model, num_classes, feature_list, test_data, test_label, file_name):
+    """
+    Compute the performance of the model on the adversarial test data
+    """
     f1 = open("./simulation_output/" + file_name + "_false.txt", "w")
     f2 = open("./simulation_output/" + file_name + "_true.txt", "w")
     f3 = "./simulation_output/" + file_name + "_softmax.txt"
