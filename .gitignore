@@ -9,3 +9,4 @@ libs/transformations/__pycache__
 __pycache__
 models/__pycache__
 simulation_output/*
+imagenet_images

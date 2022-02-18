@@ -69,6 +69,8 @@ def compute_performance(model, num_classes, feature_list, data_loader, file_name
     wrong_prediction_count = 0
     softmax = None
     for data, target in data_loader:
+        print(f'data shape: {data.shape}')
+        print(f'target shape: {target.shape}')
         total += data.size(0)
         data = data.cuda()
         data = Variable(data, volatile=True)

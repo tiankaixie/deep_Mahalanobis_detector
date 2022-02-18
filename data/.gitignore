@@ -1,3 +1,4 @@
 cifar10-data/
 *.gz
 imagenet/
+ImageNet-Datasets-Downloader
