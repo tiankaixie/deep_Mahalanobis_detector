@@ -216,10 +216,18 @@ def simulation_cifar10_resnet_imagenet():
         )
 
         test_label = torch.load(
-            "./adv_output/resnet_cifar10/" + "label_%s_%s_%s.pth" % (args.net_type, args.dataset, "FGSM")
+            "./adv_output/resnet_cifar10/"
+            + "label_%s_%s_%s.pth" % (args.net_type, args.dataset, "FGSM")
         )
 
-        lib_generation.compute_performance_2(model, args.num_classes, feature_list, test_adv_data, test_label, args.net_type + "_" + args.dataset + "_adv",)
+        lib_generation.compute_performance_2(
+            model,
+            args.num_classes,
+            feature_list,
+            test_adv_data,
+            test_label,
+            args.net_type + "_" + args.dataset + "_adv",
+        )
 
         for i in range(num_output):
             A_out = lib_generation.get_Mahalanobis_score_adv(
@@ -241,8 +249,6 @@ def simulation_cifar10_resnet_imagenet():
                 Mahalanobis_adv = np.concatenate(
                     (Mahalanobis_adv, A_out.reshape((A_out.shape[0], -1))), axis=1
                 )
-        
-
 
     m0 = "./simulation_output/" + args.net_type + "_" + args.dataset + "_train_m.txt"
     np.savetxt(m0, Origin_Mahalanobis_in, delimiter=",")
@@ -250,7 +256,7 @@ def simulation_cifar10_resnet_imagenet():
     np.savetxt(m1, Mahalanobis_in, delimiter=",")
     m2 = "./simulation_output/" + args.net_type + "_imagenet_m.txt"
     np.savetxt(m2, Mahalanobis_out, delimiter=",")
-    m3 = "./simulation_output/" + args.net_type + "_" + args.dataset +"_adv_m.txt"
+    m3 = "./simulation_output/" + args.net_type + "_" + args.dataset + "_adv_m.txt"
     np.savetxt(m3, Mahalanobis_adv, delimiter=",")
 
 
@@ -270,57 +276,58 @@ def transfer_numpy_to_png():
 
     instance_count = 0
     for data, _ in tqdm(train_loader, desc="plot training data"):
-        print(data.cpu().numpy().shape)
+        # print(data.cpu().numpy().shape)
         temp = data.cpu().numpy()
-        for i in tqdm(range(temp.shape[0]), desc="plot training data part", leave=False):
-            print(f"instance: {instance_count}")
+        for i in tqdm(
+            range(temp.shape[0]), desc="plot training data part", leave=False
+        ):
+            # print(f"instance: {instance_count}")
             t = np.array(temp[i])
-            print(t.shape)
+            # print(t.shape)
             t = np.transpose(t, (1, 2, 0))
-            print(t.shape)
+            # print(t.shape)
             new_im = Image.fromarray((t * 255).astype(np.uint8))
             new_im.save("./data_image/cifar10_train_" + str(instance_count) + ".png")
             instance_count += 1
 
     instance_count = 0
     for data, _ in tqdm(test_loader, desc="plot test data"):
-        print(data.cpu().numpy().shape)
+        # print(data.cpu().numpy().shape)
         temp = data.cpu().numpy()
         for i in tqdm(range(temp.shape[0]), desc="plot test data part", leave=False):
-            print(f"instance: {instance_count}")
+            # print(f"instance: {instance_count}")
             t = np.array(temp[i])
-            print(t.shape)
+            # print(t.shape)
             t = np.transpose(t, (1, 2, 0))
-            print(t.shape)
+            # print(t.shape)
             new_im = Image.fromarray((t * 255).astype(np.uint8))
             new_im.save("./data_image/cifar10_test_" + str(instance_count) + ".png")
             instance_count += 1
-    
+
     test_adv_data = torch.load(
-            "./adv_output/resnet_cifar10/"
-            + "adv_data_%s_%s_%s.pth" % (args.net_type, args.dataset, "FGSM")
-        )
+        "./adv_output/resnet_cifar10/"
+        + "adv_data_%s_%s_%s.pth" % (args.net_type, args.dataset, "FGSM")
+    )
 
     mean = (0.4914, 0.4822, 0.4465)
     std = (0.2023, 0.1994, 0.2010)
     denorm = transforms.Normalize(
-    mean=[-m / s for m, s in zip(mean, std)],
-    std=[1.0 / s for s in std],
-    always_apply=True,
-    max_pixel_value=1.0
-)
+        mean=[-m / s for m, s in zip(mean, std)],
+        std=[1.0 / s for s in std],
+        always_apply=True,
+        max_pixel_value=1.0,
+    )
     for i in tqdm(range(test_adv_data.shape[0]), desc="plot adv data"):
-        print(f"instance: {instance_count}")
+        # print(f"instance: {instance_count}")
         t = np.array(test_adv_data[i])
-        print(t.shape)
+        # print(t.shape)
         t = np.transpose(t, (1, 2, 0))
-        print(t.shape)
+        # print(t.shape)
 
         t = denorm(image=t)["image"]
         new_im = Image.fromarray((t * 255).astype(np.uint8))
         new_im.save("./data_image/cifar10_test_" + str(instance_count) + ".png")
         instance_count += 1
-
 
 
 def train_ood_detector(Mahalanobis_out, Mahalanobis_in):
@@ -329,16 +336,12 @@ def train_ood_detector(Mahalanobis_out, Mahalanobis_in):
     (
         Mahalanobis_data,
         Mahalanobis_labels,
-    ) = lib_generation.merge_and_generate_labels(
-        Mahalanobis_out, Mahalanobis_in
-    )
+    ) = lib_generation.merge_and_generate_labels(Mahalanobis_out, Mahalanobis_in)
     file_name = os.path.join(
         args.outf,
         "Mahalanobis_%s_%s_%s.npy" % (str(magnitude), args.dataset, out_dist),
     )
-    Mahalanobis_data = np.concatenate(
-        (Mahalanobis_data, Mahalanobis_labels), axis=1
-    )
+    Mahalanobis_data = np.concatenate((Mahalanobis_data, Mahalanobis_labels), axis=1)
     np.save(file_name, Mahalanobis_data)
 
 
@@ -374,7 +377,6 @@ def compute_distance_metrix():
 
     print(content[0])
     file.close()
-
 
 
 def quick_select(arr, start, end, k):

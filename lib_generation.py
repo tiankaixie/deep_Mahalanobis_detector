@@ -69,8 +69,8 @@ def compute_performance(model, num_classes, feature_list, data_loader, file_name
     wrong_prediction_count = 0
     softmax = None
     for data, target in data_loader:
-        print(f'data shape: {data.shape}')
-        print(f'target shape: {target.shape}')
+        print(f"data shape: {data.shape}")
+        print(f"target shape: {target.shape}")
         total += data.size(0)
         data = data.cuda()
         data = Variable(data, volatile=True)
@@ -100,10 +100,9 @@ def compute_performance(model, num_classes, feature_list, data_loader, file_name
                         instance_count, pred.cpu().numpy()[i], target.cpu().numpy()[i]
                     )
                 )
-            
+
             instance_count += 1
-        
-   
+
         equal_flag = pred.eq(target.cuda()).cpu()
         correct += equal_flag.sum()
 
@@ -521,7 +520,9 @@ def get_posterior(model, net_type, test_loader, magnitude, temperature, outf, ou
     g.close()
 
 
-def compute_performance_2(model, num_classes, feature_list, test_data, test_label, file_name):
+def compute_performance_2(
+    model, num_classes, feature_list, test_data, test_label, file_name
+):
     """
     Compute the performance of the model on the adversarial test data
     """
@@ -551,8 +552,8 @@ def compute_performance_2(model, num_classes, feature_list, test_data, test_labe
         total += batch_size
         data, target = Variable(data, requires_grad=True), Variable(target)
 
-        print(f'data shape: {data.shape}')
-        print(f'target shape: {target.shape}')
+        print(f"data shape: {data.shape}")
+        print(f"target shape: {target.shape}")
         data = data.cuda()
         data = Variable(data, volatile=True)
         output, out_features = model.feature_list(data)
@@ -581,10 +582,9 @@ def compute_performance_2(model, num_classes, feature_list, test_data, test_labe
                         instance_count, pred.cpu().numpy()[i], target.cpu().numpy()[i]
                     )
                 )
-            
+
             instance_count += 1
-        
-   
+
         equal_flag = pred.eq(target.cuda()).cpu()
         correct += equal_flag.sum()
 
