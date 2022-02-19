@@ -314,8 +314,6 @@ def transfer_numpy_to_png():
     denorm = transforms.Normalize(
         mean=[-m / s for m, s in zip(mean, std)],
         std=[1.0 / s for s in std],
-        always_apply=True,
-        max_pixel_value=1.0,
     )
     for i in tqdm(range(test_adv_data.shape[0]), desc="plot adv data"):
         # print(f"instance: {instance_count}")
