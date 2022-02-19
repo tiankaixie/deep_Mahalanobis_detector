@@ -274,21 +274,21 @@ def transfer_numpy_to_png():
         args.dataset, args.batch_size, in_transform, args.dataroot
     )
 
-    instance_count = 0
-    for data, _ in tqdm(train_loader, desc="plot training data"):
-        # print(data.cpu().numpy().shape)
-        temp = data.cpu().numpy()
-        for i in tqdm(
-            range(temp.shape[0]), desc="plot training data part", leave=False
-        ):
-            # print(f"instance: {instance_count}")
-            t = np.array(temp[i])
-            # print(t.shape)
-            t = np.transpose(t, (1, 2, 0))
-            # print(t.shape)
-            new_im = Image.fromarray((t * 255).astype(np.uint8))
-            new_im.save("./data_image/cifar10_train_" + str(instance_count) + ".png")
-            instance_count += 1
+    # instance_count = 0
+    # for data, _ in tqdm(train_loader, desc="plot training data"):
+    #     # print(data.cpu().numpy().shape)
+    #     temp = data.cpu().numpy()
+    #     for i in tqdm(
+    #         range(temp.shape[0]), desc="plot training data part", leave=False
+    #     ):
+    #         # print(f"instance: {instance_count}")
+    #         t = np.array(temp[i])
+    #         # print(t.shape)
+    #         t = np.transpose(t, (1, 2, 0))
+    #         # print(t.shape)
+    #         new_im = Image.fromarray((t * 255).astype(np.uint8))
+    #         new_im.save("./data_image/cifar10_train_" + str(instance_count) + ".png")
+    #         instance_count += 1
 
     instance_count = 0
     for data, _ in tqdm(test_loader, desc="plot test data"):
@@ -322,7 +322,7 @@ def transfer_numpy_to_png():
         t = np.transpose(t, (1, 2, 0))
         # print(t.shape)
 
-        t = denorm(image=t)["image"]
+        t = denorm(t)
         new_im = Image.fromarray((t * 255).astype(np.uint8))
         new_im.save("./data_image/cifar10_test_" + str(instance_count) + ".png")
         instance_count += 1
