@@ -269,10 +269,10 @@ def transfer_numpy_to_png():
     )
 
     instance_count = 0
-    for data, _ in train_loader:
+    for data, _ in tqdm(train_loader, desc="plot training data"):
         print(data.cpu().numpy().shape)
         temp = data.cpu().numpy()
-        for i in range(temp.shape[0]):
+        for i in tqdm(range(temp.shape[0]), desc="plot training data part", leave=False):
             print(f"instance: {instance_count}")
             t = np.array(temp[i])
             print(t.shape)
@@ -283,10 +283,10 @@ def transfer_numpy_to_png():
             instance_count += 1
 
     instance_count = 0
-    for data, _ in test_loader:
+    for data, _ in tqdm(test_loader, desc="plot test data"):
         print(data.cpu().numpy().shape)
         temp = data.cpu().numpy()
-        for i in range(temp.shape[0]):
+        for i in tqdm(range(temp.shape[0]), desc="plot test data part", leave=False):
             print(f"instance: {instance_count}")
             t = np.array(temp[i])
             print(t.shape)
@@ -300,13 +300,23 @@ def transfer_numpy_to_png():
             "./adv_output/resnet_cifar10/"
             + "adv_data_%s_%s_%s.pth" % (args.net_type, args.dataset, "FGSM")
         )
-    
-    for i in range(test_adv_data.shape[0]):
+
+    mean = (0.4914, 0.4822, 0.4465)
+    std = (0.2023, 0.1994, 0.2010)
+    denorm = transforms.Normalize(
+    mean=[-m / s for m, s in zip(mean, std)],
+    std=[1.0 / s for s in std],
+    always_apply=True,
+    max_pixel_value=1.0
+)
+    for i in tqdm(range(test_adv_data.shape[0]), desc="plot adv data"):
         print(f"instance: {instance_count}")
         t = np.array(test_adv_data[i])
         print(t.shape)
         t = np.transpose(t, (1, 2, 0))
         print(t.shape)
+
+        t = denorm(image=t)["image"]
         new_im = Image.fromarray((t * 255).astype(np.uint8))
         new_im.save("./data_image/cifar10_test_" + str(instance_count) + ".png")
         instance_count += 1
