@@ -319,11 +319,11 @@ def transfer_numpy_to_png():
         # print(f"instance: {instance_count}")
         t = np.array(test_adv_data[i])
         # print(t.shape)
-        t = np.transpose(t, (1, 2, 0))
+        # t = np.transpose(t, (1, 2, 0))
         # print(t.shape)
 
         t = denorm(torch.from_numpy(t))
-        new_im = Image.fromarray((t.numpy() * 255).astype(np.uint8))
+        new_im = Image.fromarray((np.transpose(t.numpy(), (1, 2, 0)) * 255).astype(np.uint8))
         new_im.save("./data_image/cifar10_test_" + str(instance_count) + ".png")
         instance_count += 1
 
