@@ -10,3 +10,4 @@ __pycache__
 models/__pycache__
 simulation_output/*
 imagenet_images
+distance_matrix

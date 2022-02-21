@@ -15,6 +15,10 @@ from torch.autograd import Variable
 from os import listdir
 from os.path import isfile, join
 from sewar.full_ref import uqi
+from sklearn.linear_model import LogisticRegressionCV, LogisticRegression
+from sklearn import svm
+import pickle
+
 
 parser = argparse.ArgumentParser(description="PyTorch code: Mahalanobis detector")
 parser.add_argument(
@@ -328,19 +332,30 @@ def transfer_numpy_to_png():
         instance_count += 1
 
 
-def train_ood_detector(Mahalanobis_out, Mahalanobis_in):
-    magnitude = 0.0
-    out_dist = "imagenet"
+def train_ood_detector():
+    # read data from simulation_output
+    mi = "./simulation_output/" + args.net_type + "_" + args.dataset + "_train_m.txt"
+    Mahalanobis_in = np.loadtxt(mi, delimiter=",")
+    print(Mahalanobis_in.shape)
+    mo = "./simulation_output/" + args.net_type + "_" + args.dataset + "_test_m.txt"
+    Mahalanobis_out = np.loadtxt(mo, delimiter=",")
+    print(Mahalanobis_out.shape)
+    ma = "./simulation_output/" + args.net_type + "_" + args.dataset + "_adv_m.txt"
+    Mahalanobis_adv = np.loadtxt(ma, delimiter=",")
+    print(Mahalanobis_adv.shape)
+    Mahalanobis_out = np.concatenate((Mahalanobis_out, Mahalanobis_adv), axis=0)
+    
     (
         Mahalanobis_data,
         Mahalanobis_labels,
     ) = lib_generation.merge_and_generate_labels(Mahalanobis_out, Mahalanobis_in)
-    file_name = os.path.join(
-        args.outf,
-        "Mahalanobis_%s_%s_%s.npy" % (str(magnitude), args.dataset, out_dist),
-    )
-    Mahalanobis_data = np.concatenate((Mahalanobis_data, Mahalanobis_labels), axis=1)
-    np.save(file_name, Mahalanobis_data)
+    print(Mahalanobis_labels)
+    model = LogisticRegressionCV()
+    model.fit(Mahalanobis_data, Mahalanobis_labels)
+    print(model.score(Mahalanobis_data, Mahalanobis_labels))
+    pickle.dump(model, open("./ood_detector/resnet_cifar10_ood_detector.pkl", "wb"))
+
+    
 
 
 def compute_distance_metrix():
@@ -399,4 +414,5 @@ def quick_select(arr, start, end, k):
 
 if __name__ == "__main__":
     # simulation_cifar10_resnet_imagenet()
-    transfer_numpy_to_png()
+    # transfer_numpy_to_png()
+    train_ood_detector()
