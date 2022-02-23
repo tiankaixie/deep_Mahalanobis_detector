@@ -69,8 +69,6 @@ def compute_performance(model, num_classes, feature_list, data_loader, file_name
     wrong_prediction_count = 0
     softmax = None
     for data, target in data_loader:
-        print(f"data shape: {data.shape}")
-        print(f"target shape: {target.shape}")
         total += data.size(0)
         data = data.cuda()
         data = Variable(data, volatile=True)
@@ -83,7 +81,6 @@ def compute_performance(model, num_classes, feature_list, data_loader, file_name
         if softmax is None:
             softmax = batch_softmax
         else:
-            print("concatenate")
             softmax = np.concatenate((softmax, batch_softmax))
         for i in range(data.size(0)):
             if pred.cpu().numpy()[i] != target.cpu().numpy()[i]:
@@ -106,7 +103,7 @@ def compute_performance(model, num_classes, feature_list, data_loader, file_name
         equal_flag = pred.eq(target.cuda()).cpu()
         correct += equal_flag.sum()
 
-    print(softmax.shape)
+    # print(softmax.shape)
     np.savetxt(f3, softmax, delimiter=",")
     print(f"correct: {correct}")
     print(f"wrong: {wrong_prediction_count}")
@@ -552,8 +549,6 @@ def compute_performance_2(
         total += batch_size
         data, target = Variable(data, requires_grad=True), Variable(target)
 
-        print(f"data shape: {data.shape}")
-        print(f"target shape: {target.shape}")
         data = data.cuda()
         data = Variable(data, volatile=True)
         output, out_features = model.feature_list(data)
@@ -565,7 +560,6 @@ def compute_performance_2(
         if softmax is None:
             softmax = batch_softmax
         else:
-            print("concatenate")
             softmax = np.concatenate((softmax, batch_softmax))
         for i in range(data.size(0)):
             if pred.cpu().numpy()[i] != target.cpu().numpy()[i]:
@@ -588,7 +582,6 @@ def compute_performance_2(
         equal_flag = pred.eq(target.cuda()).cpu()
         correct += equal_flag.sum()
 
-    print(softmax.shape)
     np.savetxt(f3, softmax, delimiter=",")
     print(f"correct: {correct}")
     print(f"wrong: {wrong_prediction_count}")
