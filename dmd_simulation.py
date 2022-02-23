@@ -413,6 +413,6 @@ def quick_select(arr, start, end, k):
 
 
 if __name__ == "__main__":
-    # simulation_cifar10_resnet_imagenet()
+    simulation_cifar10_resnet_imagenet()
     # transfer_numpy_to_png()
-    train_ood_detector()
+    # train_ood_detector()
