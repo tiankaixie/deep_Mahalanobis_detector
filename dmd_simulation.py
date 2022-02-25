@@ -327,7 +327,9 @@ def transfer_numpy_to_png():
         # print(t.shape)
 
         t = denorm(torch.from_numpy(t))
-        new_im = Image.fromarray((np.transpose(t.numpy(), (1, 2, 0)) * 255).astype(np.uint8))
+        new_im = Image.fromarray(
+            (np.transpose(t.numpy(), (1, 2, 0)) * 255).astype(np.uint8)
+        )
         new_im.save("./data_image/cifar10_test_" + str(instance_count) + ".png")
         instance_count += 1
 
@@ -336,26 +338,24 @@ def train_ood_detector():
     # read data from simulation_output
     mi = "./simulation_output/" + args.net_type + "_" + args.dataset + "_train_m.txt"
     Mahalanobis_in = np.loadtxt(mi, delimiter=",")
-    print(Mahalanobis_in.shape)
+    # print(Mahalanobis_in.shape)
     mo = "./simulation_output/" + args.net_type + "_" + args.dataset + "_test_m.txt"
     Mahalanobis_out = np.loadtxt(mo, delimiter=",")
-    print(Mahalanobis_out.shape)
+    # print(Mahalanobis_out.shape)
     ma = "./simulation_output/" + args.net_type + "_" + args.dataset + "_adv_m.txt"
     Mahalanobis_adv = np.loadtxt(ma, delimiter=",")
-    print(Mahalanobis_adv.shape)
+    # print(Mahalanobis_adv.shape)
     Mahalanobis_out = np.concatenate((Mahalanobis_out, Mahalanobis_adv), axis=0)
-    
+
     (
         Mahalanobis_data,
         Mahalanobis_labels,
     ) = lib_generation.merge_and_generate_labels(Mahalanobis_out, Mahalanobis_in)
-    print(Mahalanobis_labels)
+    # print(Mahalanobis_labels)
     model = LogisticRegressionCV()
     model.fit(Mahalanobis_data, Mahalanobis_labels)
     print(model.score(Mahalanobis_data, Mahalanobis_labels))
-    pickle.dump(model, open("./ood_detector/resnet_cifar10_ood_detector.pkl", "wb"))
-
-    
+    pickle.dump(model, open("./ood_detector/"  + args.net_type +"_cifar10_ood_detector.pkl", "wb"))
 
 
 def compute_distance_metrix():
@@ -413,6 +413,6 @@ def quick_select(arr, start, end, k):
 
 
 if __name__ == "__main__":
-    simulation_cifar10_resnet_imagenet()
+    # simulation_cifar10_resnet_imagenet()
     # transfer_numpy_to_png()
-    # train_ood_detector()
+    train_ood_detector()

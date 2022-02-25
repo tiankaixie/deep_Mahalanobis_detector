@@ -9,5 +9,6 @@ libs/transformations/__pycache__
 __pycache__
 models/__pycache__
 simulation_output/*
+simulation_output_cp1/*
 imagenet_images
 distance_matrix
