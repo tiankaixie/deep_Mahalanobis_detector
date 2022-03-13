@@ -323,3 +323,8 @@ def simulation_case1():
   print(oodd.score(Mahalanobis_data, Mahalanobis_labels))
   pickle.dump(oodd, open("./ood_detector/resnet_s1_cifar10_ood_detector.pkl", "wb"))
   print("ood detector s1 saved")
+
+
+
+if __name__ == "__main__":
+  simulation_case1()
